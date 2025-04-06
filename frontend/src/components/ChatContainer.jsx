@@ -18,62 +18,54 @@ const ChatContainer = () => {
   } = useChatStore();
 
   const { authUser } = useAuthStore();
-
   const messageEndRef = useRef(null);
   const [selectedMessages, setSelectedMessages] = useState([]);
 
-  // Load and subscribe to messages
-  useEffect(() => {
-    if (!selectedUser?._id) return;
-
-    getMessages(selectedUser._id);
-    subscribeToMessages();
-
-    return () => unsubscribeFromMessages();
-  }, [
-    selectedUser._id,
-    getMessages,
-    subscribeToMessages,
-    unsubscribeFromMessages,
-  ]);
-
-  // Auto-scroll to bottom when new messages arrive
-  useEffect(() => {
-    if (messageEndRef.current) {
-      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [messages]);
-
-  const toggleMessageSelection = (messageId) => {
+  const toggleMessageSelection = (id) => {
     setSelectedMessages((prev) =>
-      prev.includes(messageId)
-        ? prev.filter((id) => id !== messageId)
-        : [...prev, messageId]
+      prev.includes(id) ? prev.filter((msgId) => msgId !== id) : [...prev, id]
     );
   };
 
-  const handleSingleDelete = async (messageId) => {
-    try {
-      await axios.delete(`/api/messages/${messageId}`);
-      setSelectedMessages((prev) => prev.filter((id) => id !== messageId));
-    } catch (err) {
-      console.error("Delete error:", err);
-    }
+  const clearSelectedMessages = () => {
+    setSelectedMessages([]);
   };
 
   const handleBulkDelete = async () => {
     try {
       await axios.delete("/api/messages", {
         data: { messageIds: selectedMessages },
-        // Add auth headers if needed:
-        // headers: { Authorization: `Bearer ${yourAuthToken}` },
       });
-      setSelectedMessages([]);
-      // Optionally refresh or filter messages here
-    } catch (err) {
-      console.error("Bulk delete error:", err);
+      clearSelectedMessages();
+      getMessages(selectedUser._id); // Refresh after deletion
+    } catch (error) {
+      console.error("Bulk delete error:", error);
     }
   };
+
+  const handleSingleDelete = async (id) => {
+    try {
+      await axios.delete(`/api/messages/${id}`);
+      getMessages(selectedUser._id); // Refresh
+    } catch (error) {
+      console.error("Delete error: ", error);
+    }
+  };
+
+  useEffect(() => {
+    if (selectedUser?._id) {
+      getMessages(selectedUser._id);
+      subscribeToMessages();
+    }
+
+    return () => unsubscribeFromMessages();
+  }, [selectedUser?._id]);
+
+  useEffect(() => {
+    if (messageEndRef.current && messages.length) {
+      messageEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   if (isMessagesLoading) {
     return (
@@ -88,19 +80,17 @@ const ChatContainer = () => {
   return (
     <div className="flex-1 flex flex-col overflow-auto">
       <ChatHeader />
-
       {selectedMessages.length > 0 && (
-        <div className="p-3 bg-base-200 flex justify-between items-center">
+        <div className="bg-red-100 text-red-700 p-2 flex justify-between items-center">
           <span>{selectedMessages.length} selected</span>
           <button
             onClick={handleBulkDelete}
-            className="text-red-600 font-medium"
+            className="bg-red-500 text-white px-3 py-1 rounded"
           >
-            🗑️ Delete Selected
+            Delete Selected
           </button>
         </div>
       )}
-
       <div className="flex-1 overflow-y-auto p-4 space-y-4">
         {messages.map((msg) => (
           <div
@@ -118,43 +108,41 @@ const ChatContainer = () => {
                       ? authUser.profilePic || "/avatar.png"
                       : selectedUser.profilePic || "/avatar.png"
                   }
-                  alt="profile pic"
+                  alt="profile"
                 />
               </div>
             </div>
-
-            <div className="chat-header mb-1 flex items-center gap-2">
+            <div className="chat-header mb-1">
               <input
                 type="checkbox"
+                className="mr-2"
                 checked={selectedMessages.includes(msg._id)}
                 onChange={() => toggleMessageSelection(msg._id)}
               />
-              <time className="text-xs opacity-50 ml-1">
+              <time className="text-xs opacity-50">
                 {formatMessageTime(msg.createdAt)}
               </time>
+            </div>
+            <div className="chat-bubble flex flex-col">
+              {msg.image && (
+                <img
+                  src={msg.image}
+                  alt="attachment"
+                  className="sm:max-w-[200px] rounded-md mb-2"
+                />
+              )}
+              {msg.text && <p>{msg.text}</p>}
               <button
                 onClick={() => handleSingleDelete(msg._id)}
-                className="text-red-500 ml-2"
+                className="text-red-500 text-sm mt-1 text-right"
                 title="Delete Message"
               >
                 🗑️
               </button>
             </div>
-
-            <div className="chat-bubble flex flex-col">
-              {msg.image && (
-                <img
-                  src={msg.image}
-                  alt="Attachment"
-                  className="sm:max-w-[200px] rounded-md mb-2"
-                />
-              )}
-              {msg.text && <p>{msg.text}</p>}
-            </div>
           </div>
         ))}
       </div>
-
       <MessageInput />
     </div>
   );

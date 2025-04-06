@@ -1,34 +1,33 @@
 import express from "express";
 import dotenv from "dotenv";
-import cookieParser from "cookie-parser";
 import cors from "cors";
-import aiChatRoute from './routes/aiChatRoute.js';
-import { connectDB } from "./lib/db.js";
-
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
-import {app, server } from './lib/socket.js'
+import userRoutes from "./routes/user.route.js"; //make sure this file exists
+import connectToMongoDB from "./db/connectToMongoDB.js";
+import { app, server } from "./socket/socket.js";
+import cookieParser from "cookie-parser";
+
+
 
 dotenv.config();
 
-const PORT = process.env.PORT;
-
-app.use(express.json());
+//Add CORS Middleware before any routes
+app.use(cors({
+  origin: "http://localhost:5173",
+  credentials: true, // if using cookies
+}));
 app.use(cookieParser());
-app.use(
-  cors({
-    origin: "http://localhost:5173",
-    credentials: true,
-  })
-);
 
+// Built-in middlewares
+app.use(express.json());
 app.use("/api/auth", authRoutes);
 app.use("/api/messages", messageRoutes);
+app.use("/api/users", userRoutes); //ensure route file is working
 
-app.use('/api/ai-chat', aiChatRoute);
-
-
-server.listen(PORT, () => {
-  console.log("server is running on PORT:" + PORT);
-  connectDB();
+// Connect to DB and start server
+server.listen(process.env.PORT || 5001, () => {
+  connectToMongoDB();
+  
+  console.log("Server running on port", process.env.PORT || 5001);
 });
