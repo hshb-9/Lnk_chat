@@ -26,19 +26,20 @@ export const useChatStore = create((set, get) => ({
   getUsers: async () => {
     set({ isUsersLoading: true });
     try {
-      const res = await axiosInstance.get("/users"); // ✅ FIXED endpoint
+      const res = await axiosInstance.get("/users");
       set({ users: res.data });
     } catch (error) {
-      toast.error(error.response?.data?.message || "Failed to load users");
+      toast.error("Failed to fetch users");
     } finally {
       set({ isUsersLoading: false });
     }
   },
+  
 
   getMessages: async (userId) => {
     set({ isMessagesLoading: true });
     try {
-      const res = await axiosInstance.get("/users");
+      const res = await axiosInstance.get("/messages/get/${selectedUser._id}");
       set({ messages: res.data });
     } catch (error) {
       toast.error(error.response?.data?.message || "Failed to load messages");
