@@ -3,6 +3,7 @@ import Message from "../models/message.model.js";
 import cloudinary from "../lib/cloudinary.js";
 import { getReceiverSocketId, io } from "../lib/socket.js";
 
+
 export const getUsersForSidebar = async (req, res) => {
   try {
     const loggedInUserId = req.user._id;
@@ -67,5 +68,25 @@ export const sendMessage = async (req, res) => {
   } catch (error) {
     console.log("Error in sendMessage controller:", error.message);
     res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+export const deleteMessages = async (req, res) => {
+  try {
+    const { messageIds } = req.body;
+    await Message.deleteMany({ _id: { $in: messageIds } });
+    res.status(200).json({ success: true, message: "Messages deleted." });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete messages." });
+  }
+};
+
+export const deleteSingleMessage = async (req, res) => {
+  try {
+    const { messageId } = req.params;
+    await Message.findByIdAndDelete(messageId);
+    res.status(200).json({ success: true, message: "Message deleted." });
+  } catch (err) {
+    res.status(500).json({ error: "Failed to delete message." });
   }
 };

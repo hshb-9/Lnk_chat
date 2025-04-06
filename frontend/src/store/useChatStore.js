@@ -9,7 +9,19 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  selectedMessages: [],
 
+  toggleMessageSelection: (id) =>
+    set((state) => {
+      const alreadySelected = state.selectedMessages.includes(id);
+      return {
+        selectedMessages: alreadySelected
+          ? state.selectedMessages.filter((m) => m !== id)
+          : [...state.selectedMessages, id],
+      };
+    }),
+  clearSelectedMessages: () => set({ selectedMessages: [] }),
+  
   getUsers: async () => {
     set({ isUsersLoading: true });
     try {
