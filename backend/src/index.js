@@ -9,10 +9,14 @@ import { connectDB } from "./lib/db.js";
 import authRoutes from "./routes/auth.route.js";
 import messageRoutes from "./routes/message.route.js";
 import { app, server } from "./lib/socket.js";
+import router from "./routes/aiChat.route.js";
+
 
 dotenv.config();
 
 const PORT = process.env.PORT;
+
+app.use('/api/ai-chat', router);
 
 app.use(express.json());
 app.use(cookieParser());
